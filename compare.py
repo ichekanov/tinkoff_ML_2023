@@ -75,13 +75,13 @@ def prepare_text(text: str) -> str:
     tree = ast.parse(text)
     for node in ast.walk(tree):
         if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
-            node.value.s = '' # delete all docstrings from code
+            node.value.s = '' # remove docstring
     new_text = ast.unparse(tree)  # recreate text from AST
-    new_text = new_text.replace('"""', '')  # remove docstrings quotes
-    new_text = new_text.replace('\n', ' ')  # remove newlines
-    new_text = new_text.replace('\t', '')  # remove tabs
-    new_text = new_text.replace('  ', '')  # remove indents
-    new_text = new_text.replace('\'', '"')  # replace ' with "
+    new_text = new_text.replace('"""', '')  # remove all docstrings quotes
+    new_text = new_text.replace('\n', ' ')  # remove all newlines
+    new_text = new_text.replace('\t', '')  # remove all tabs
+    new_text = new_text.replace('  ', '')  # remove all indents
+    new_text = new_text.replace('\'', '"')  # replace all ' with "
     new_text = new_text.lower()  # make all letters lowercase
     return new_text
 
@@ -108,6 +108,9 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     spinner = Spinner(len(s2))
     for i2, c2 in enumerate(s2):
         distances_ = [i2+1]
+        # I tried to initialize array with [i2+1] + [0] * len(s1) but it turned out to be slower
+        # Also, I tried to use numpy arrays, but it was twice slower than the code below
+        # (you can find this version in previous commits)
         for i1, c1 in enumerate(s1):
             if c1 == c2:
                 distances_.append(distances[i1])
@@ -118,39 +121,6 @@ def levenshtein_distance(s1: str, s2: str) -> int:
         spinner.tick()
     spinner.finish()
     logging.debug(f"Levenshtein distance: {distances[-1]}")
-    return distances[-1]
-
-
-def levenshtein_distance_np(s1: str, s2: str) -> int:
-    """
-    Function calculates Levenshtein distance between two strings.
-
-    Parameters
-    s1 : str
-        First string.
-    s2 : str
-        Second string.
-
-    Returns
-    int
-        Levenshtein distance.
-    """
-    # I wanted to use numpy, but it's significantly slower than the plain python
-    # version (tested with time() function).
-    raise DeprecationWarning(
-        "This function is deprecated. Use levenshtein_distance instead.")
-    if len(s1) > len(s2):
-        s1, s2 = s2, s1
-    distances = np.arange(len(s1) + 1)
-    for i2, c2 in enumerate(s2):
-        distances_ = np.array([i2+1])
-        for i1, c1 in enumerate(s1):
-            if c1 == c2:
-                distances_ = np.append(distances_, distances[i1])
-            else:
-                distances_ = np.append(
-                    distances_, 1 + min((distances[i1], distances[i1 + 1], distances_[-1])))
-        distances = distances_
     return distances[-1]
 
 
