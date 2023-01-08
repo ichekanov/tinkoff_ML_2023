@@ -1,7 +1,62 @@
 import argparse
-import numpy as np
 import logging
+import sys
 import time
+import numpy as np
+
+
+class Spinner:
+    """
+    Implements a cool spinner with progress in percents.
+    """
+
+    def __init__(self, overall_count: int, delay: float = 0.1):
+        """
+        Parameters
+        overall_count : int
+            Number of tick() calls to complete the spinner.
+        delay : float
+            Delay between spinner changes in seconds.
+        """
+        self._spinner_generator = self.__spinning_cursor()
+        self._delay = delay
+        self._prev_spin = time.time()
+        self._prev_length = 0
+        self._overall_count = overall_count
+        self._counter = 0
+
+    def __spinning_cursor(self):
+        """
+        Generator for spinner.
+        """
+        while True:
+            for cursor in '|/-\\':
+                yield cursor
+
+    def tick(self):
+        """
+        Function to call on each tick.
+        Every call increases the progress by 1/overall_count.
+        """
+        self._counter += 1
+        if time.time() - self._prev_spin < self._delay:
+            return
+        self._prev_spin = time.time()
+        sys.stdout.write('\b'*self._prev_length)
+        progress = self._counter / self._overall_count * 100
+        new_spinner: str = next(self._spinner_generator)
+        new_spinner += f' {progress:.0f}%'
+        self._prev_length = len(new_spinner)
+        sys.stdout.write(new_spinner)
+        sys.stdout.flush()
+
+    def finish(self):
+        """
+        Function to call when spinner is finished.
+        Removes the spinner from the console.
+        """
+        sys.stdout.write('\b'*self._prev_length)
+        sys.stdout.flush()
 
 
 def levenshtein_distance(s1: str, s2: str) -> int:
@@ -21,6 +76,7 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     if len(s1) > len(s2):
         s1, s2 = s2, s1
     distances = range(len(s1) + 1)
+    spinner = Spinner(len(s2))
     for i2, c2 in enumerate(s2):
         distances_ = [i2+1]
         for i1, c1 in enumerate(s1):
@@ -30,6 +86,8 @@ def levenshtein_distance(s1: str, s2: str) -> int:
                 distances_.append(
                     1 + min((distances[i1], distances[i1 + 1], distances_[-1])))
         distances = distances_
+        spinner.tick()
+    spinner.finish()
     return distances[-1]
 
 
@@ -68,7 +126,7 @@ def levenshtein_distance_np(s1: str, s2: str) -> int:
 
 def compare(file1: str, file2: str) -> float:
     """
-    Function compare two files and return the normalized distance between them.
+    Function compare two files and return the normalized Levenshtein distance between them.
 
     Parameters
     file1 : str
