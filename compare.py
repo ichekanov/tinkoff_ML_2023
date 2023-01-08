@@ -72,15 +72,21 @@ def prepare_text(text: str) -> str:
     str
         Prepared text.
     """
-    tree = ast.parse(text)
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
-            node.value.s = '' # remove docstring
-        if isinstance(node, ast.FunctionDef):
-            node.returns = None # remove return annotations
-            for arg in node.args.args:
-                arg.annotation = None # remove argument annotations
-    new_text = ast.unparse(tree)  # recreate text from AST
+    try:
+        tree = ast.parse(text)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
+                node.value.s = '' # remove docstring
+            if isinstance(node, ast.FunctionDef):
+                node.returns = None # remove return annotations
+                for arg in node.args.args:
+                    arg.annotation = None # remove argument annotations
+        new_text = ast.unparse(tree)  # recreate text from AST
+    except SyntaxError:
+        logging.warning("Syntax error while parsing the code. Skipping removing docstrings and annotations.")
+        new_text = text
+    # Instead of using ast module, you can use regex to remove docstrings and annotations,
+    # but it will be less reliable and much harder to understand.
     new_text = new_text.replace('"""', '')  # remove all docstrings quotes
     new_text = new_text.replace('\n', ' ')  # remove all newlines
     new_text = new_text.replace('\t', '')  # remove all tabs
@@ -167,7 +173,7 @@ def main(input_file: str, output_file: str) -> None:
                         format="%(asctime)s - %(levelname)s - %(message)s",
                         datefmt="%d-%b-%y %H:%M:%S")
     with open(input_file, "r", encoding="utf-8") as file:
-        lines = file.readlines()
+        lines = [m.strip() for m in file.readlines()]
     logging.info(f"Found {len(lines)} file pairs in {input_file}")
     results = []
     for line in lines:
