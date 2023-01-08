@@ -1,4 +1,5 @@
 import argparse
+import ast
 import logging
 import sys
 import time
@@ -57,6 +58,32 @@ class Spinner:
         """
         sys.stdout.write('\b'*self._prev_length)
         sys.stdout.flush()
+
+
+def prepare_text(text: str) -> str:
+    """
+    Function prepares text for comparison.
+
+    Parameters
+    text : str
+        Text to prepare.
+
+    Returns
+    str
+        Prepared text.
+    """
+    tree = ast.parse(text)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
+            node.value.s = '' # delete all docstrings from code
+    new_text = ast.unparse(tree)  # recreate text from AST
+    new_text = new_text.replace('"""', '')  # remove docstrings quotes
+    new_text = new_text.replace('\n', ' ')  # remove newlines
+    new_text = new_text.replace('\t', '')  # remove tabs
+    new_text = new_text.replace('  ', '')  # remove indents
+    new_text = new_text.replace('\'', '"')  # replace ' with "
+    new_text = new_text.lower()  # make all letters lowercase
+    return new_text
 
 
 def levenshtein_distance(s1: str, s2: str) -> int:
@@ -143,8 +170,10 @@ def compare(file1: str, file2: str) -> float:
     """
     with open(file1, "r", encoding="utf-8") as file:
         text1 = file.read()
+        text1 = prepare_text(text1)
     with open(file2, "r", encoding="utf-8") as file:
         text2 = file.read()
+        text2 = prepare_text(text2)
     distance = levenshtein_distance(text1, text2) / max(len(text1), len(text2))
     return round(1-distance, 3)
 
@@ -170,7 +199,7 @@ def main(input_file: str, output_file: str) -> None:
     for line in lines:
         logging.info(f"Processing files: {line}")
         try:
-            file1, file2 = line.split()
+            file1, file2 = (m.strip() for m in line.split())
             distance = compare(file1, file2)
         except ValueError:
             logging.error(f"Incorrect line: {line}")
@@ -178,12 +207,12 @@ def main(input_file: str, output_file: str) -> None:
         except FileNotFoundError:
             logging.error(f"One of files not found: {line}")
             distance = -1.0
-        logging.info(f"Distance: {distance}")
+        logging.info(f"Similarity: {distance}")
         results.append(distance)
     with open(output_file, "w", encoding="utf-8") as file:
         file.write("\n".join(map(str, results)))
     logging.info(f"Successfully saved {len(results)} results to {output_file}")
-    logging.info(f"Total time elapsed: {round(time.time() - start, 2)}")
+    logging.info(f"Total time elapsed: {round(time.time() - start, 2)}s")
 
 
 if __name__ == "__main__":
