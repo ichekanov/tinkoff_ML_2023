@@ -3,7 +3,6 @@ import ast
 import logging
 import sys
 import time
-import numpy as np
 
 
 class Spinner:
@@ -76,16 +75,17 @@ def prepare_text(text: str) -> str:
         tree = ast.parse(text)
         for node in ast.walk(tree):
             if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
-                node.value.s = '' # remove docstring
+                node.value.s = ''  # remove docstring
             if isinstance(node, ast.FunctionDef):
-                node.returns = None # remove return annotations
+                node.returns = None  # remove return annotations
                 for arg in node.args.args:
-                    arg.annotation = None # remove argument annotations
+                    arg.annotation = None  # remove argument annotations
         new_text = ast.unparse(tree)  # recreate text from AST
     except SyntaxError:
-        logging.warning("Syntax error while parsing the code. Skipping removing docstrings and annotations.")
+        logging.warning(
+            "Syntax error while parsing the code. Skipping removing docstrings and annotations.")
         new_text = text
-    # Instead of using ast module, you can use regex to remove docstrings and annotations,
+    # Instead of using ast module, we can use regex to remove docstrings and annotations,
     # but it will be less reliable and much harder to understand.
     new_text = new_text.replace('"""', '')  # remove all docstrings quotes
     new_text = new_text.replace('\n', ' ')  # remove all newlines
@@ -196,9 +196,10 @@ def main(input_file: str, output_file: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_file", help="Path to the input file.", type=str)
-    parser.add_argument("output_file", help="Path to the output file.", type=str)
+    parser = argparse.ArgumentParser(
+        description="Tool for calculating similarity between files. "
+        "Used to detect plagiarism, especially in Python code.")
+    parser.add_argument("input_file", help="path to the input file", type=str)
+    parser.add_argument("output_file", help="path to the output file", type=str)
     args = parser.parse_args()
     main(args.input_file, args.output_file)
-    # main("input.txt", "output.txt")
