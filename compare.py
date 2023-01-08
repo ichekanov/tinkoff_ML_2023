@@ -76,6 +76,10 @@ def prepare_text(text: str) -> str:
     for node in ast.walk(tree):
         if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
             node.value.s = '' # remove docstring
+        if isinstance(node, ast.FunctionDef):
+            node.returns = None # remove return annotations
+            for arg in node.args.args:
+                arg.annotation = None # remove argument annotations
     new_text = ast.unparse(tree)  # recreate text from AST
     new_text = new_text.replace('"""', '')  # remove all docstrings quotes
     new_text = new_text.replace('\n', ' ')  # remove all newlines
