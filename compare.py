@@ -61,7 +61,7 @@ class Spinner:
 
 def levenshtein_distance(s1: str, s2: str) -> int:
     """
-    Function calculate Levenshtein distance between two strings.
+    Function calculates Levenshtein distance between two strings.
 
     Parameters
     s1 : str
@@ -75,6 +75,8 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     """
     if len(s1) > len(s2):
         s1, s2 = s2, s1
+    logging.debug(f"Length of the first string: {len(s1)}")
+    logging.debug(f"Length of the second string: {len(s2)}")
     distances = range(len(s1) + 1)
     spinner = Spinner(len(s2))
     for i2, c2 in enumerate(s2):
@@ -88,12 +90,13 @@ def levenshtein_distance(s1: str, s2: str) -> int:
         distances = distances_
         spinner.tick()
     spinner.finish()
+    logging.debug(f"Levenshtein distance: {distances[-1]}")
     return distances[-1]
 
 
 def levenshtein_distance_np(s1: str, s2: str) -> int:
     """
-    Function calculate Levenshtein distance between two strings.
+    Function calculates Levenshtein distance between two strings.
 
     Parameters
     s1 : str
@@ -126,7 +129,7 @@ def levenshtein_distance_np(s1: str, s2: str) -> int:
 
 def compare(file1: str, file2: str) -> float:
     """
-    Function compare two files and return the normalized Levenshtein distance between them.
+    Function compares two files and returns the equality rate.
 
     Parameters
     file1 : str
@@ -143,12 +146,12 @@ def compare(file1: str, file2: str) -> float:
     with open(file2, "r", encoding="utf-8") as file:
         text2 = file.read()
     distance = levenshtein_distance(text1, text2) / max(len(text1), len(text2))
-    return round(distance, 3)
+    return round(1-distance, 3)
 
 
 def main(input_file: str, output_file: str) -> None:
     """
-    Function compare all pairs of files from input_file and write the results to output_file.
+    Function compares all pairs of files from input_file and writes the results to output_file.
 
     Parameters
     input_file : str
